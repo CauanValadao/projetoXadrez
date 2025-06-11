@@ -1,4 +1,4 @@
-package estudo.parte22;
+package estudo.parte2;
 
 import javax.swing.SwingUtilities;
 import javax.swing.JFrame;
