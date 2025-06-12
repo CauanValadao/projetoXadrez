@@ -38,6 +38,9 @@ class MyPanel1 extends JPanel {
 
     private boolean dragging = false;
 
+    int offsetX;
+    int offsetY;
+
     Square[] cubos;
     Square selectedSquare = null;
 
@@ -46,16 +49,26 @@ class MyPanel1 extends JPanel {
         setBorder(BorderFactory.createLineBorder(Color.black));
 
         cubos = new Square[2];
-        cubos[0] = new Square(50, 50, 20, 20);
-        cubos[1] = new Square(100, 100, 20, 20);
+        cubos[0] = new Square(50, 50, 20, 20, Color.RED);
+        cubos[1] = new Square(100, 100, 20, 20,Color.BLUE);
 
         addMouseListener(new MouseAdapter() {
             public void mousePressed(MouseEvent e) {
-                for(Square s: cubos){
-                    if(s.contains(e.getX(),e.getY())){
+                for(int i = cubos.length-1; i >= 0; i--){
+                    if(cubos[i].contains(e.getX(),e.getY())){
                         dragging = true;
-                        selectedSquare = s;
-                        break;
+                        selectedSquare = cubos[i];
+
+                        // MELHORIA 1: Calcula e armazena o offset
+                        offsetX = e.getX() - cubos[i].x;
+                        offsetY = e.getY() - cubos[i].y;
+                        
+                        Square troca = cubos[i];
+                        cubos[i] = cubos[cubos.length-1];
+                        cubos[cubos.length-1] = troca;
+
+                        repaint();
+                        return; // Para o loop
                     }
                 }
             }
@@ -68,7 +81,9 @@ class MyPanel1 extends JPanel {
         addMouseMotionListener(new MouseMotionAdapter() {
             public void mouseDragged(MouseEvent e) {
                 if (dragging && selectedSquare != null) {
-                    selectedSquare.moveTo(e.getX(), e.getY());
+                    int newX = e.getX() - offsetX;
+                    int newY = e.getY() - offsetY;
+                    selectedSquare.moveTo(newX, newY);
                     repaint();
                 }
             }
@@ -85,35 +100,24 @@ class MyPanel1 extends JPanel {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);       
         g.drawString("This is my custom Panel!",10,20);
-        pintarAzul(g, cubos[1]);
-        pintarVermelho(g, cubos[0]);
+        for(Square c: cubos)
+            Square.pintarQuadrado(g, c);
 
         
     }  
 
-    private void pintarVermelho(Graphics g, Square cubo){
-        g.setColor(Color.RED);
-        g.fillRect(cubo.x, cubo.y, cubo.width, cubo.height);
-        g.setColor(Color.BLACK);
-        g.drawRect(cubo.x, cubo.y, cubo.width, cubo.height);
-    }
-
-    private void pintarAzul(Graphics g, Square cubo){
-        g.setColor(Color.BLUE);
-        g.fillRect(cubo.x, cubo.y, cubo.width, cubo.height);
-        g.setColor(Color.BLACK);
-        g.drawRect(cubo.x, cubo.y, cubo.width, cubo.height);
-    }
 }
 
 class Square {
     int x, y, width, height;
+    Color cor;
 
-    public Square(int x, int y, int width, int height) {
+    public Square(int x, int y, int width, int height, Color cor) {
         this.x = x;
         this.y = y;
         this.width = width;
         this.height = height;
+        this.cor = cor;
     }
 
     public boolean contains(int px, int py) {
@@ -123,5 +127,12 @@ class Square {
     public void moveTo(int px, int py) {
         this.x = px;
         this.y = py;
+    }
+
+    public static void pintarQuadrado(Graphics g, Square cubo){
+        g.setColor(cubo.cor);
+        g.fillRect(cubo.x, cubo.y, cubo.width, cubo.height);
+        g.setColor(Color.BLACK);
+        g.drawRect(cubo.x, cubo.y, cubo.width, cubo.height);
     }
 }

@@ -3,6 +3,8 @@ package estudo.parte2;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
@@ -63,6 +65,8 @@ class MySemaforo extends JPanel{
 
     protected void paintComponent(Graphics g){
         super.paintComponent(g);
+        Graphics2D g2d = (Graphics2D) g;
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         for(Light luz: luzes){
             if(luz == selectedSquare)
                 luz.draw(g, true);
