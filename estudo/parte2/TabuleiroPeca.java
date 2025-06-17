@@ -10,7 +10,9 @@ import java.net.URL;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
@@ -28,20 +30,20 @@ public class TabuleiroPeca {
         JFrame frame = new JFrame("TabuleiroPeca");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        frame.add(new PainelTabuleiro());
+        frame.add(new PainelTabuleiro1());
         frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 }
 
-class PainelTabuleiro extends JPanel{
+class PainelTabuleiro1 extends JPanel{
     private boolean clique = false;
 
     Casa[][] tabuleiro;
     Casa casaSelecionada = null;
 
-    public PainelTabuleiro(){
+    public PainelTabuleiro1(){
         setBorder(BorderFactory.createLineBorder(Color.BLACK));
 
         tabuleiro = new Casa[8][8];
@@ -55,7 +57,7 @@ class PainelTabuleiro extends JPanel{
             }
         }
         //pegando a imagem
-        URL urlDaImagem = TabuleiroPeca.class.getResource("images/chess.png");
+        URL urlDaImagem = TabuleiroPeca.class.getResource("images/b_rei.png");
             if(urlDaImagem == null){
                 System.out.println("Erro: Não foi possível encontrar a imagem.");
                 this.add(new JLabel("Erro ao carregar imagem!"));
@@ -63,7 +65,7 @@ class PainelTabuleiro extends JPanel{
             else{
                 try {
                     Image imagemOriginal = ImageIO.read(urlDaImagem);
-                    tabuleiro[3][3].peca = new Rei(imagemOriginal, 3, 3, 64, 64);
+                    tabuleiro[1][3].peca = new Rei(imagemOriginal, 3, 1, 64, 64);
 
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -83,8 +85,8 @@ class PainelTabuleiro extends JPanel{
                                 casaSelecionada = tabuleiro[i][j];
                             }
                             else if(clique && casaSelecionada != null){
-                                if(casaSelecionada.peca.podeIr(i,j)){
-                                    casaSelecionada.peca.moverPara(i,j);
+                                if(casaSelecionada.peca.podeIr(j, i)){
+                                    casaSelecionada.peca.moverPara(j, i);
                                     Peca temp = tabuleiro[i][j].peca;
                                     tabuleiro[i][j].peca = casaSelecionada.peca;
                                     casaSelecionada.peca = temp;
@@ -106,6 +108,10 @@ class PainelTabuleiro extends JPanel{
     @Override
     protected void paintComponent(Graphics g){
         super.paintComponent(g);
+
+        Graphics2D g2d = (Graphics2D) g;
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
         for(int i = 0; i < 8; i++){
             for(int j = 0; j < 8; j++){
                 tabuleiro[i][j].desenhaCasa(g);
@@ -113,36 +119,23 @@ class PainelTabuleiro extends JPanel{
                     tabuleiro[i][j].peca.desenhaPeca(g);
             }
         }
+        if(casaSelecionada != null){
+            g.setColor(Color.RED);
+            g.drawRect(casaSelecionada.x * 64, casaSelecionada.y * 64, 64, 64);
+            for(int i = 0; i < 8; i++){
+                for(int j = 0; j < 8; j++){
+                    if(casaSelecionada.peca.podeIr(j, i)){
+                        g.setColor(Color.BLACK);
+                        g.fillOval(j*64 + 24, i*64 + 24, 16, 16);
+                        g.setColor(Color.RED);
+                        g.drawOval(j*64 + 24, i*64 + 24, 16, 16);
+                    }
+                }
+            }
+        }
 
     }
 }
-/*Classe casa, 
- * atributos:
- * .cor
- * .peca -> sera uma propria classe, nesse codigo vou fazer so uma classe cavalo. ele tera a coordenada que esta
- * -metodos:
- * .construtor: inicia a peca, a cor. Casa(i, j, cor, peca);
- * .desenhar casa
- * .contem
- * vou ter uma matriz de casas.
- * 
- * mousePressed(){
- * if(clique == false && matriz[i][j].peca != null){
- *   clique = positivo
- *   casaSelecionada = matriz[i][j]
- * }
- * else if(clique = positivo && casaSelecionada != Null){
- *      clique = negativo
- *      if casaSelecionada.podeIr(i,j){
- *          Peca peca = matriz[i][j].peca
- *          matriz[i][j].peca = casaSelecionada.peca
- *          casaSelecionada.peca = peca         
- * }
- *      casaSelecionada = Null;
- * }
- * repaint();
- *}
- */
 
 
 class Casa{
@@ -207,7 +200,7 @@ class Rei extends Peca{
     
     @Override
     public boolean podeIr(int x, int y){
-        if(y-1 == this.y && (x-1 == this.x ||  x + 1 == this.x) ) return true;
+        if(Math.abs(x - this.x) <= 1 && Math.abs(y - this.y) <= 1 && (x != this.x || y !=this.y)) return true;
         return false;
     }
 }
