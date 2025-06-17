@@ -67,6 +67,8 @@ class ControladorDeJogo{
                 
             }
         }
+
+
         //agora eu devo adicionar o resto das pecas
         //para isso devo criar pelo menos a base dos outros tipos de pecas
         
@@ -138,7 +140,7 @@ abstract class Peca{
         this.imagem = imagemPeca.getScaledInstance(largura, altura, Image.SCALE_SMOOTH);
     }
 
-    public abstract boolean podeIr(int linha, int coluna);
+    public abstract boolean podeIr(int linha, int coluna, Casa[][] tabuleiro);
 
     public void moverPara(int linha, int coluna){
         this.linha = linha;
@@ -158,8 +160,39 @@ class Rei extends Peca{
     }
     
     @Override
-    public boolean podeIr(int linha, int coluna){
-        if(Math.abs(coluna - this.coluna) <=1 && Math.abs(linha - this.linha) <=1 && (linha != this.linha || coluna != this.coluna)) return true;
-        return false;
+    public boolean podeIr(int linha, int coluna, Casa[][] tabuleiro){
+        if(tabuleiro[linha][coluna].peca != null && tabuleiro[linha][coluna].peca.cor == this.cor) return false;
+
+        int deltaLinha = Math.abs(this.linha - linha);
+        int deltaColuna = Math.abs(this.coluna - coluna);
+
+        return (deltaLinha <= 1 && deltaColuna <= 1) && (deltaColuna + deltaLinha > 0);
     }
 }
+
+class Peao extends Peca{
+    boolean primeiraJogada = true;
+    int direcao;
+    public Peao(Image imagemPeca, Color corPeca, int linhaPeca, int colunaPeca, int altura, int largura, int lado){
+        super(imagemPeca, corPeca, linhaPeca, colunaPeca, altura, largura, lado);
+        if(this.cor == Color.BLACK) this.direcao = 1;
+        else this.direcao = -1;
+    }
+
+    @Override
+    public void moverPara(int linha, int coluna){
+        super.moverPara(linha, coluna);
+        this.primeiraJogada = false;
+    }
+
+    @Override
+    public boolean podeIr(int linha, int coluna, Casa[][] tabuleiro){
+        if(tabuleiro[linha][coluna].peca != null && tabuleiro[linha][coluna].peca.cor == this.cor) return false;
+
+        if(tabuleiro[linha][coluna].peca != null && Math.abs(this.coluna - coluna) == 1 && this.linha + this.direcao== linha) return true;
+
+        if(tabuleiro[linha][coluna].peca == null && this.coluna == coluna && (this.linha + this.direcao == linha || (primeiraJogada && this.linha  + this.direcao*2 == linha && tabuleiro[linha + direcao][coluna].peca == null))) return true;
+            return false;
+    }
+}
+
