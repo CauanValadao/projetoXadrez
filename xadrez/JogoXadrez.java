@@ -113,6 +113,7 @@ class ControladorDeJogo{
     private List<Casa> movimentosPossiveis = new ArrayList<>();
     private List<Peca> pecasBrancas = new ArrayList<>();
     private List<Peca> pecasPretas = new ArrayList<>();
+    private Peao acabouDeAndarDuas = null;
 
     public ControladorDeJogo(PainelTabuleiro painel, int lado){
         this.lado = lado;
@@ -212,9 +213,34 @@ class ControladorDeJogo{
                     else pecasBrancas.remove(tabuleiro[linha][coluna].peca);
                 }
 
+                if(casaSelecionada.peca instanceof Rei && linha == casaSelecionada.getLinha() && Math.abs(coluna - casaSelecionada.getColuna()) == 2){
+                    if(coluna == 6){
+                        tabuleiro[linha][7].peca.moverPara(linha, 5);
+                        tabuleiro[linha][5].peca = tabuleiro[linha][7].peca;
+                        tabuleiro[linha][7].peca = null;
+                    }
+                    else{
+                        tabuleiro[linha][0].peca.moverPara(linha, 3);
+                        tabuleiro[linha][3].peca = tabuleiro[linha][0].peca;
+                        tabuleiro[linha][0].peca = null;
+                    }
+                }
+
+                if(casaSelecionada.peca instanceof Peao && coluna != casaSelecionada.getColuna() && tabuleiro[linha][coluna].peca == null){
+                    tabuleiro[acabouDeAndarDuas.linha][acabouDeAndarDuas.coluna].peca = null;
+                }
+                
+                this.acabouDeAndarDuas = null;
+
+                if(casaSelecionada.peca instanceof Peao && Math.abs(linha - casaSelecionada.getLinha()) == 2){
+                    this.acabouDeAndarDuas = (Peao)casaSelecionada.peca;
+                }
+
+
                 casaSelecionada.peca.moverPara(linha, coluna);
                 tabuleiro[linha][coluna].peca = casaSelecionada.peca;
                 casaSelecionada.peca = null;
+
 
                 vezDoJogador = (vezDoJogador == Color.WHITE) ? Color.BLACK : Color.WHITE;
             }
@@ -231,7 +257,7 @@ class ControladorDeJogo{
             
             movimentosPossiveis = geraMovimentosLegais(casaSelecionada.peca);
 
-            if(estaEmxheque(vezDoJogador) || casaSelecionada.peca instanceof Rei){
+            if(estaEmXeque(vezDoJogador) || casaSelecionada.peca instanceof Rei){
                 movimentosPossiveis = filtraMovimentos(casaSelecionada, movimentosPossiveis);
             }
         
@@ -243,12 +269,12 @@ class ControladorDeJogo{
     public void monitoraXequeMate(Color jogador){
         Color acabouDeJogar = (jogador == Color.WHITE) ? Color.BLACK : Color.WHITE;
 
-        if(estaEmxheque(acabouDeJogar)) System.out.println("fim de jogo");
+        if(estaEmXeque(acabouDeJogar)) System.out.println("fim de jogo");
 
         List<Peca> pecasJogador = (jogador == Color.WHITE) ? pecasBrancas : pecasPretas;
         
         if(!existeMovimentoLegal(pecasJogador)){
-            if(estaEmxheque(jogador)) System.out.println("fim de jogo");
+            if(estaEmXeque(jogador)) System.out.println("fim de jogo");
             else System.out.println("empate");
         }
     }
@@ -267,7 +293,7 @@ class ControladorDeJogo{
         List<Casa> movimentosLegais = new ArrayList<>();
         for(int i = 0; i < 8; i++){
             for(int j = 0; j < 8; j++){
-                if(peca.podeIr(i, j, tabuleiro)) movimentosLegais.add(tabuleiro[i][j]);
+                if(peca.podeIr(i, j, this)) movimentosLegais.add(tabuleiro[i][j]);
             }
         }
         return movimentosLegais;
@@ -284,17 +310,21 @@ class ControladorDeJogo{
     return null;
 }
 
+    public Casa[][] getTabuleiro(){
+        return this.tabuleiro;
+    }
+
     public List<Casa> getMovimentosPossiveis() {
         return this.movimentosPossiveis;
 }
 
-    public boolean estaEmxheque(Color jogador){
+    public boolean estaEmXeque(Color jogador){
         List<Peca> pecasInimigas = (jogador == Color.WHITE) ? pecasPretas : pecasBrancas;
         List<Peca> pecasAliadas = (jogador == Color.WHITE) ? pecasBrancas : pecasPretas;
         Peca rei = encontrarReiNaLista(pecasAliadas);
 
         for(Peca pecaInimiga : pecasInimigas)
-            if(pecaInimiga.podeIr(rei.linha,rei.coluna, tabuleiro)) return true;
+            if(pecaInimiga.podeIr(rei.linha,rei.coluna, this)) return true;
         return false;
     }
 
@@ -304,10 +334,27 @@ class ControladorDeJogo{
         return null;
     }
 
+    public boolean casaEstaEmAtaque(int linha, int coluna, Color jogador){
+        List<Peca> pecasAtacantes = (jogador == Color.WHITE) ? pecasPretas : pecasBrancas;
+
+        for(Peca pecaAtacante : pecasAtacantes)
+            if(pecaAtacante.podeIr(linha, coluna, this)) return true;
+        return false;
+    }
+
+    public Peao getAcabouDeAndarDuas(){
+        return this.acabouDeAndarDuas;
+    }
+    
+    public void setAcabouDeAndarDuas(Peao acabouDeAndarDuas){
+        this.acabouDeAndarDuas = acabouDeAndarDuas;
+    }
+
     public List<Casa> filtraMovimentos(Casa casaOrigem, List<Casa> movimentosGerados){
         List<Casa> movimentosQueSalvam = new ArrayList<>();
 
         Peca pecaMovida = casaOrigem.peca;
+        boolean primeiraJogadaOriginal;
 
         for(Casa casaDestino : movimentosGerados){
 
@@ -315,6 +362,7 @@ class ControladorDeJogo{
 
             casaOrigem.peca = null;
             casaDestino.peca = pecaMovida;
+            primeiraJogadaOriginal = pecaMovida.getPrimeiraJogada();
 
             pecaMovida.moverPara(casaDestino.getLinha(), casaDestino.getColuna());
 
@@ -323,7 +371,7 @@ class ControladorDeJogo{
                 else pecasPretas.remove(pecaCapturada);
             }
 
-            if(!estaEmxheque(vezDoJogador)) movimentosQueSalvam.add(casaDestino);
+            if(!estaEmXeque(vezDoJogador)) movimentosQueSalvam.add(casaDestino);
                     
             if(pecaCapturada != null){
                 if(vezDoJogador == Color.BLACK) pecasBrancas.add(pecaCapturada);
@@ -333,6 +381,7 @@ class ControladorDeJogo{
             casaOrigem.peca = pecaMovida;
             casaDestino.peca = pecaCapturada;
             pecaMovida.moverPara(casaOrigem.getLinha(), casaOrigem.getColuna());
+            pecaMovida.setPrimeiraJogada(primeiraJogadaOriginal);
         }
         return movimentosQueSalvam;
     }
@@ -372,6 +421,7 @@ abstract class Peca{
     protected Image imagem;
     protected final Color cor;
     protected int linha, coluna, lado;
+    private boolean primeiraJogada = true;
 
     public Peca(Image imagemPeca, Color corPeca, int linhaPeca, int colunaPeca, int altura, int largura, int lado){
         this.cor = corPeca;
@@ -382,11 +432,20 @@ abstract class Peca{
         this.imagem = imagemPeca.getScaledInstance(largura, altura, Image.SCALE_SMOOTH);
     }
 
-    public abstract boolean podeIr(int linha, int coluna, Casa[][] tabuleiro);
+    public abstract boolean podeIr(int linha, int coluna, ControladorDeJogo controlador);
 
     public void moverPara(int linha, int coluna){
         this.linha = linha;
         this.coluna = coluna;
+        primeiraJogada = false;
+    }
+
+    public boolean getPrimeiraJogada(){
+        return this.primeiraJogada;
+    }
+
+    public void setPrimeiraJogada(boolean primeiraJogada){
+        this.primeiraJogada = primeiraJogada;
     }
 
     public void desenhaPeca(Graphics g){
@@ -400,10 +459,22 @@ class Rei extends Peca{
     public Rei(Image imagemPeca, Color corPeca, int linhaPeca, int colunaPeca, int altura, int largura, int lado){
         super(imagemPeca, corPeca, linhaPeca, colunaPeca, altura, largura, lado);
     }
-    
+
     @Override
-    public boolean podeIr(int linha, int coluna, Casa[][] tabuleiro){
+    public boolean podeIr(int linha, int coluna, ControladorDeJogo controlador){
+        Casa[][] tabuleiro = controlador.getTabuleiro();
         if(tabuleiro[linha][coluna].peca != null && tabuleiro[linha][coluna].peca.cor == this.cor) return false;
+
+        if(this.getPrimeiraJogada() && linha == this.linha && tabuleiro[linha][coluna].peca == null && Math.abs(this.coluna - coluna) == 2 && !controlador.casaEstaEmAtaque(linha, coluna, cor) && !controlador.estaEmXeque(cor)){
+            if(this.coluna - coluna == 2){
+                if(tabuleiro[linha][1].peca == null && !controlador.casaEstaEmAtaque(linha,1, cor) && tabuleiro[linha][2].peca == null && !controlador.casaEstaEmAtaque(linha, 2, cor) && tabuleiro[linha][3].peca == null && 
+                !controlador.casaEstaEmAtaque(linha, 3, cor) && tabuleiro[linha][0].peca != null && tabuleiro[linha][0].peca instanceof Torre && tabuleiro[linha][0].peca.getPrimeiraJogada()) return true;
+                return false;
+            }
+            else if(tabuleiro[linha][5].peca == null && !controlador.casaEstaEmAtaque(linha, 5, cor) && tabuleiro[linha][6].peca == null && !controlador.casaEstaEmAtaque(linha, 6, cor) && 
+            tabuleiro[linha][7].peca != null && tabuleiro[linha][7].peca instanceof Torre && tabuleiro[linha][7].peca.getPrimeiraJogada()) return true;
+            return false;
+        }
 
         int deltaLinha = Math.abs(this.linha - linha);
         int deltaColuna = Math.abs(this.coluna - coluna);
@@ -412,9 +483,7 @@ class Rei extends Peca{
     }
 }
 
-
 class Peao extends Peca{
-    private boolean primeiraJogada = true;
     private int direcao;
     public Peao(Image imagemPeca, Color corPeca, int linhaPeca, int colunaPeca, int altura, int largura, int lado){
         super(imagemPeca, corPeca, linhaPeca, colunaPeca, altura, largura, lado);
@@ -423,19 +492,20 @@ class Peao extends Peca{
     }
 
     @Override
-    public void moverPara(int linha, int coluna){
-        super.moverPara(linha, coluna);
-        this.primeiraJogada = false;
-    }
+    public boolean podeIr(int linha, int coluna, ControladorDeJogo controlador){
+        Casa[][] tabuleiro = controlador.getTabuleiro();
 
-    @Override
-    public boolean podeIr(int linha, int coluna, Casa[][] tabuleiro){
         if(tabuleiro[linha][coluna].peca != null && tabuleiro[linha][coluna].peca.cor == this.cor) return false;
 
         if(tabuleiro[linha][coluna].peca != null && Math.abs(this.coluna - coluna) == 1 && this.linha + this.direcao == linha) return true;
 
-        if(tabuleiro[linha][coluna].peca == null && this.coluna == coluna && (this.linha + this.direcao == linha || (primeiraJogada && this.linha  + this.direcao*2 == linha && tabuleiro[this.linha + direcao][coluna].peca == null))) return true;
-            return false;
+        if(tabuleiro[linha][coluna].peca == null && this.coluna == coluna && (this.linha + this.direcao == linha || (this.getPrimeiraJogada() && this.linha  + this.direcao*2 == linha && tabuleiro[this.linha + direcao][coluna].peca == null))) return true;
+        
+        int linhaP = (this.cor == Color.WHITE) ? 3 : 4;
+
+        if(tabuleiro[linha][coluna].peca == null && linha == this.linha + this.direcao && this.linha == linhaP && Math.abs(this.coluna - coluna) == 1 && tabuleiro[this.linha][coluna].peca != null && tabuleiro[this.linha][coluna].peca instanceof Peao && ((Peao)tabuleiro[this.linha][coluna].peca) == controlador.getAcabouDeAndarDuas()) return true;
+
+        return false;
     }
 }
 
@@ -445,7 +515,9 @@ class Torre extends Peca{
     }
 
     @Override
-    public boolean podeIr(int linha, int coluna, Casa[][] tabuleiro){
+    public boolean podeIr(int linha, int coluna, ControladorDeJogo controlador){
+        Casa[][] tabuleiro = controlador.getTabuleiro();
+
         if(tabuleiro[linha][coluna].peca != null && tabuleiro[linha][coluna].peca.cor == this.cor) return false;
         int direcao;
 
@@ -479,7 +551,9 @@ class Cavalo extends Peca{
     }
 
     @Override
-    public boolean podeIr(int linha, int coluna, Casa[][] tabuleiro){
+    public boolean podeIr(int linha, int coluna, ControladorDeJogo controlador){
+        Casa[][] tabuleiro = controlador.getTabuleiro();
+
         if(tabuleiro[linha][coluna].peca != null && tabuleiro[linha][coluna].peca.cor == this.cor) return false;
 
         int deltaLinha = Math.abs(this.linha - linha);
@@ -494,7 +568,9 @@ class Bispo extends Peca{
         super(imagemPeca, corPeca, linhaPeca, colunaPeca, altura, largura, lado);
     }
 
-    public boolean podeIr(int linha, int coluna, Casa[][] tabuleiro){
+    public boolean podeIr(int linha, int coluna, ControladorDeJogo controlador){
+        Casa[][] tabuleiro = controlador.getTabuleiro();
+
         if(tabuleiro[linha][coluna].peca != null && tabuleiro[linha][coluna].peca.cor == this.cor || Math.abs(this.linha - linha) != Math.abs(this.coluna - coluna)) return false;
 
         int caminhoLinha;
@@ -517,22 +593,22 @@ class Rainha extends Peca{
         super(imagemPeca, corPeca, linhaPeca, colunaPeca, altura, largura, lado);
     }
 
-    public boolean podeIr(int linha, int coluna, Casa[][] tabuleiro){
+    public boolean podeIr(int linha, int coluna, ControladorDeJogo controlador){
+        Casa[][] tabuleiro = controlador.getTabuleiro();
+
         if(tabuleiro[linha][coluna].peca != null && tabuleiro[linha][coluna].peca.cor == this.cor) return false;
 
         Torre torreVirtual = new Torre(null, this.cor, this.linha, this.coluna, 0, 0, this.lado);
         Bispo bispoVirtual = new Bispo(null, this.cor, this.linha, this.coluna, 0, 0, this.lado);
 
-        return (torreVirtual.podeIr(linha, coluna, tabuleiro) || bispoVirtual.podeIr(linha, coluna, tabuleiro));
+        return (torreVirtual.podeIr(linha, coluna, controlador) || bispoVirtual.podeIr(linha, coluna, controlador));
     }
 }
 
 /*
- *  A FAZERES:
- *      1.Roque
- *      2.En passant
- *      3.Mensagem de fim na tela
- *      4.Parar o jogo
- *      5.Botão para começar outra partida
- *      6.conseguir começar outra partida
+ *  OBJETIVOS:
+ *      1.Mensagem de fim na tela
+ *      2.Parar o jogo
+ *      3.Botão para começar outra partida
+ *      4.conseguir começar outra partida
  */
