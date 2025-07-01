@@ -2,6 +2,7 @@ package xadrez;
 
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -13,6 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
@@ -48,11 +50,15 @@ public class JogoXadrez{
 class PainelTabuleiro extends JPanel{
 
     private ControladorDeJogo controlador;
+    private JButton botaoReiniciar;
 
     public PainelTabuleiro(){
         setBorder(BorderFactory.createLineBorder(Color.BLACK));
 
+        this.setLayout(null); 
+
         MouseAdapter mouseAdapter = new MouseAdapter(){
+            
 
             @Override
             public void mousePressed(MouseEvent e){
@@ -65,11 +71,32 @@ class PainelTabuleiro extends JPanel{
         };
 
         addMouseListener(mouseAdapter);
+
+        this.botaoReiniciar = new JButton("Reiniciar Jogo");
+        this.botaoReiniciar.setFocusable(false);
+        this.botaoReiniciar.setVisible(false);
+        this.botaoReiniciar.addActionListener(e -> {
+            controlador.reiniciarJogo();
+            repaint(); 
+        });
+        this.add(botaoReiniciar);
+
     }
 
-    public void setControlador(ControladorDeJogo controlador){
+    public void controlaBotao(boolean mostrar){
+        this.botaoReiniciar.setVisible(mostrar);
+    }
+
+    public void setControlador(ControladorDeJogo controlador) {
         this.controlador = controlador;
-        setPreferredSize(new Dimension(8*controlador.getLado(), 8*controlador.getLado()));
+        int lado = controlador.getLado();
+        setPreferredSize(new Dimension(8 * lado, 8 * lado));
+
+        int larguraBotao = 200;
+        int alturaBotao = 50;
+        int xBotao = (8 * lado - larguraBotao) / 2;
+        int yBotao = (8 * lado - alturaBotao) / 2;
+        this.botaoReiniciar.setBounds(xBotao, yBotao, larguraBotao, alturaBotao);
     }
 
     @Override
@@ -97,6 +124,27 @@ class PainelTabuleiro extends JPanel{
             g.setColor(Color.RED);
             g.drawOval(casa.getColuna()*controlador.getLado() + (controlador.getLado() - 16)/2, casa.getLinha()*controlador.getLado() + (controlador.getLado() - 16)/2, 16, 16);
         }
+
+        if(controlador.getResultado() != null){
+                g.setColor(new Color(0, 0, 0, 150));
+                g.fillRect(0, 0, getWidth(), getHeight());
+
+                Font fonteResultado = new Font("Arial", Font.BOLD, 32);
+                g.setFont(fonteResultado);
+                g.setColor(Color.WHITE);
+
+                String mensagem;
+                if (controlador.getResultado() == Color.CYAN) {
+                    mensagem = "Empate!";
+                } 
+                else {
+                    String vencedor = (controlador.getResultado() == Color.WHITE) ? "Brancas" : "Pretas";
+                    mensagem = "Xeque-mate! " + vencedor + " venceram!";
+                }
+                
+                int larguraTextoResultado = g.getFontMetrics().stringWidth(mensagem);
+                g.drawString(mensagem, (getWidth() - larguraTextoResultado) / 2, botaoReiniciar.getY() - 30);
+        }
     }
 
     }
@@ -114,6 +162,7 @@ class ControladorDeJogo{
     private List<Peca> pecasBrancas = new ArrayList<>();
     private List<Peca> pecasPretas = new ArrayList<>();
     private Peao acabouDeAndarDuas = null;
+    private Color resultado = null;
 
     public ControladorDeJogo(PainelTabuleiro painel, int lado){
         this.lado = lado;
@@ -205,62 +254,62 @@ class ControladorDeJogo{
     }
 
     public void gerenciarClique(int linha, int coluna){
-        if(casaSelecionada != null){
-            if(movimentosPossiveis.contains(tabuleiro[linha][coluna])){
+        if(this.resultado == null){
+            if(casaSelecionada != null){
+                if(movimentosPossiveis.contains(tabuleiro[linha][coluna])){
 
-                if(tabuleiro[linha][coluna].peca != null){
-                    if(vezDoJogador == Color.WHITE) pecasPretas.remove(tabuleiro[linha][coluna].peca);
-                    else pecasBrancas.remove(tabuleiro[linha][coluna].peca);
-                }
-
-                if(casaSelecionada.peca instanceof Rei && linha == casaSelecionada.getLinha() && Math.abs(coluna - casaSelecionada.getColuna()) == 2){
-                    if(coluna == 6){
-                        tabuleiro[linha][7].peca.moverPara(linha, 5);
-                        tabuleiro[linha][5].peca = tabuleiro[linha][7].peca;
-                        tabuleiro[linha][7].peca = null;
+                    if(tabuleiro[linha][coluna].peca != null){
+                        if(vezDoJogador == Color.WHITE) pecasPretas.remove(tabuleiro[linha][coluna].peca);
+                        else pecasBrancas.remove(tabuleiro[linha][coluna].peca);
                     }
-                    else{
-                        tabuleiro[linha][0].peca.moverPara(linha, 3);
-                        tabuleiro[linha][3].peca = tabuleiro[linha][0].peca;
-                        tabuleiro[linha][0].peca = null;
+
+                    if(casaSelecionada.peca instanceof Rei && linha == casaSelecionada.getLinha() && Math.abs(coluna - casaSelecionada.getColuna()) == 2){
+                        if(coluna == 6){
+                            tabuleiro[linha][7].peca.moverPara(linha, 5);
+                            tabuleiro[linha][5].peca = tabuleiro[linha][7].peca;
+                            tabuleiro[linha][7].peca = null;
+                        }
+                        else{
+                            tabuleiro[linha][0].peca.moverPara(linha, 3);
+                            tabuleiro[linha][3].peca = tabuleiro[linha][0].peca;
+                            tabuleiro[linha][0].peca = null;
+                        }
                     }
+
+                    if(casaSelecionada.peca instanceof Peao && coluna != casaSelecionada.getColuna() && tabuleiro[linha][coluna].peca == null){
+                        tabuleiro[acabouDeAndarDuas.linha][acabouDeAndarDuas.coluna].peca = null;
+                    }
+                    
+                    this.acabouDeAndarDuas = null;
+
+                    if(casaSelecionada.peca instanceof Peao && Math.abs(linha - casaSelecionada.getLinha()) == 2){
+                        this.acabouDeAndarDuas = (Peao)casaSelecionada.peca;
+                    }
+
+
+                    casaSelecionada.peca.moverPara(linha, coluna);
+                    tabuleiro[linha][coluna].peca = casaSelecionada.peca;
+                    casaSelecionada.peca = null;
+
+
+                    vezDoJogador = (vezDoJogador == Color.WHITE) ? Color.BLACK : Color.WHITE;
                 }
+                movimentosPossiveis.clear();
+                casaSelecionada = null;
 
-                if(casaSelecionada.peca instanceof Peao && coluna != casaSelecionada.getColuna() && tabuleiro[linha][coluna].peca == null){
-                    tabuleiro[acabouDeAndarDuas.linha][acabouDeAndarDuas.coluna].peca = null;
-                }
-                
-                this.acabouDeAndarDuas = null;
-
-                if(casaSelecionada.peca instanceof Peao && Math.abs(linha - casaSelecionada.getLinha()) == 2){
-                    this.acabouDeAndarDuas = (Peao)casaSelecionada.peca;
-                }
-
-
-                casaSelecionada.peca.moverPara(linha, coluna);
-                tabuleiro[linha][coluna].peca = casaSelecionada.peca;
-                casaSelecionada.peca = null;
-
-
-                vezDoJogador = (vezDoJogador == Color.WHITE) ? Color.BLACK : Color.WHITE;
+                monitoraXequeMate(vezDoJogador);
             }
-            movimentosPossiveis.clear();
-            casaSelecionada = null;
-
-            monitoraXequeMate(vezDoJogador);
-        }
 
 
-        else if(tabuleiro[linha][coluna].peca != null && tabuleiro[linha][coluna].peca.cor == vezDoJogador){
+            else if(tabuleiro[linha][coluna].peca != null && tabuleiro[linha][coluna].peca.cor == vezDoJogador){
             movimentosPossiveis.clear();
             casaSelecionada = tabuleiro[linha][coluna];
             
             movimentosPossiveis = geraMovimentosLegais(casaSelecionada.peca);
 
-            if(estaEmXeque(vezDoJogador) || casaSelecionada.peca instanceof Rei){
-                movimentosPossiveis = filtraMovimentos(casaSelecionada, movimentosPossiveis);
-            }
+            movimentosPossiveis = filtraMovimentos(casaSelecionada, movimentosPossiveis);
         
+        }
         }
 
         this.painel.repaint();
@@ -269,13 +318,24 @@ class ControladorDeJogo{
     public void monitoraXequeMate(Color jogador){
         Color acabouDeJogar = (jogador == Color.WHITE) ? Color.BLACK : Color.WHITE;
 
-        if(estaEmXeque(acabouDeJogar)) System.out.println("fim de jogo");
+        if(estaEmXeque(acabouDeJogar)){
+             System.out.println("fim de jogo");
+             resultado = acabouDeJogar;
+            painel.controlaBotao(true);
+        }
 
         List<Peca> pecasJogador = (jogador == Color.WHITE) ? pecasBrancas : pecasPretas;
         
         if(!existeMovimentoLegal(pecasJogador)){
-            if(estaEmXeque(jogador)) System.out.println("fim de jogo");
-            else System.out.println("empate");
+            if(estaEmXeque(jogador)){
+                 System.out.println("fim de jogo");
+                 resultado = jogador;
+            }
+            else{
+                 System.out.println("empate");
+                 resultado = Color.CYAN;
+            }
+            painel.controlaBotao(true);
         }
     }
 
@@ -318,6 +378,10 @@ class ControladorDeJogo{
         return this.movimentosPossiveis;
 }
 
+    public Color getResultado(){
+        return this.resultado;
+    }
+
     public boolean estaEmXeque(Color jogador){
         List<Peca> pecasInimigas = (jogador == Color.WHITE) ? pecasPretas : pecasBrancas;
         List<Peca> pecasAliadas = (jogador == Color.WHITE) ? pecasBrancas : pecasPretas;
@@ -348,6 +412,29 @@ class ControladorDeJogo{
     
     public void setAcabouDeAndarDuas(Peao acabouDeAndarDuas){
         this.acabouDeAndarDuas = acabouDeAndarDuas;
+    }
+
+    public void reiniciarJogo(){
+        
+        casaSelecionada = null;
+        acabouDeAndarDuas = null;
+        resultado = null;
+        movimentosPossiveis.clear();
+        pecasBrancas.clear();
+        pecasPretas.clear();
+        vezDoJogador = Color.WHITE;
+        
+        posicionaPecas();
+
+        for(int j = 0; j < 8; j++){
+            pecasBrancas.add(tabuleiro[7][j].peca);
+            pecasBrancas.add(tabuleiro[6][j].peca);
+            pecasPretas.add(tabuleiro[0][j].peca);
+            pecasPretas.add(tabuleiro[1][j].peca);
+        }
+
+        this.painel.controlaBotao(false);
+        this.painel.repaint();
     }
 
     public List<Casa> filtraMovimentos(Casa casaOrigem, List<Casa> movimentosGerados){
@@ -607,8 +694,5 @@ class Rainha extends Peca{
 
 /*
  *  OBJETIVOS:
- *      1.Mensagem de fim na tela
- *      2.Parar o jogo
- *      3.Botão para começar outra partida
- *      4.conseguir começar outra partida
+ *      5.promocao de peça
  */
