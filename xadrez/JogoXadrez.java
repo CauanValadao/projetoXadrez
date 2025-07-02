@@ -125,6 +125,23 @@ class PainelTabuleiro extends JPanel{
             g.drawOval(casa.getColuna()*controlador.getLado() + (controlador.getLado() - 16)/2, casa.getLinha()*controlador.getLado() + (controlador.getLado() - 16)/2, 16, 16);
         }
 
+        if(this.controlador.getPromocao()){
+            g.setColor(Color.WHITE);
+            g.fillRect(controlador.getPromocaoColuna()*controlador.getLado(), controlador.getPromocaoLinha()*controlador.getLado(), controlador.getLado(), controlador.getLado()*4);
+            if(controlador.getPromocaoLinha() == 0){
+                g.drawImage(controlador.getImagem("B_RAINHA").getScaledInstance(controlador.getLado(), controlador.getLado(), Image.SCALE_SMOOTH), controlador.getPromocaoColuna()*controlador.getLado(), (controlador.getPromocaoLinha())*controlador.getLado(), null);
+                g.drawImage(controlador.getImagem("B_CAVALO").getScaledInstance(controlador.getLado(), controlador.getLado(), Image.SCALE_SMOOTH), controlador.getPromocaoColuna()*controlador.getLado(), (controlador.getPromocaoLinha()+1)*controlador.getLado(), null);
+                g.drawImage(controlador.getImagem("B_TORRE").getScaledInstance(controlador.getLado(), controlador.getLado(), Image.SCALE_SMOOTH), controlador.getPromocaoColuna()*controlador.getLado(), (controlador.getPromocaoLinha()+2)*controlador.getLado(), null);
+                g.drawImage(controlador.getImagem("B_BISPO").getScaledInstance(controlador.getLado(), controlador.getLado(), Image.SCALE_SMOOTH), controlador.getPromocaoColuna()*controlador.getLado(), (controlador.getPromocaoLinha()+3)*controlador.getLado(), null);
+            }
+            else{
+                g.drawImage(controlador.getImagem("P_RAINHA").getScaledInstance(controlador.getLado(), controlador.getLado(), Image.SCALE_SMOOTH), controlador.getPromocaoColuna()*controlador.getLado(), (controlador.getPromocaoLinha())*controlador.getLado(), null);
+                g.drawImage(controlador.getImagem("P_CAVALO").getScaledInstance(controlador.getLado(), controlador.getLado(), Image.SCALE_SMOOTH), controlador.getPromocaoColuna()*controlador.getLado(), (controlador.getPromocaoLinha()+1)*controlador.getLado(), null);
+                g.drawImage(controlador.getImagem("P_TORRE").getScaledInstance(controlador.getLado(), controlador.getLado(), Image.SCALE_SMOOTH), controlador.getPromocaoColuna()*controlador.getLado(), (controlador.getPromocaoLinha()+2)*controlador.getLado(), null);
+                g.drawImage(controlador.getImagem("P_BISPO").getScaledInstance(controlador.getLado(), controlador.getLado(), Image.SCALE_SMOOTH), controlador.getPromocaoColuna()*controlador.getLado(), (controlador.getPromocaoLinha()+3)*controlador.getLado(), null);
+            }
+        }
+
         if(controlador.getResultado() != null){
                 g.setColor(new Color(0, 0, 0, 150));
                 g.fillRect(0, 0, getWidth(), getHeight());
@@ -158,11 +175,15 @@ class ControladorDeJogo{
     private Casa casaSelecionada = null;
     private final int lado;
     private Map<String, Image> imagens;
+    private Image imagemErro;
     private List<Casa> movimentosPossiveis = new ArrayList<>();
     private List<Peca> pecasBrancas = new ArrayList<>();
     private List<Peca> pecasPretas = new ArrayList<>();
     private Peao acabouDeAndarDuas = null;
     private Color resultado = null;
+    private boolean promocao = false;
+    private int promocaoColuna;
+    private int promocaoLinha;
 
     public ControladorDeJogo(PainelTabuleiro painel, int lado){
         this.lado = lado;
@@ -193,32 +214,32 @@ class ControladorDeJogo{
         }
 
         for(int j = 0; j < 8; j++){
-            tabuleiro[6][j].peca = new Peao(imagens.get("B_PEAO"), Color.WHITE, 6, j, this.lado, this.lado, this.lado);
-            tabuleiro[1][j].peca = new Peao(imagens.get("P_PEAO"), Color.BLACK, 1, j, this.lado, this.lado, this.lado);
+            tabuleiro[6][j].peca = new Peao(getImagem("B_PEAO"), Color.WHITE, 6, j, this.lado, this.lado, this.lado);
+            tabuleiro[1][j].peca = new Peao(getImagem("P_PEAO"), Color.BLACK, 1, j, this.lado, this.lado, this.lado);
 
             switch (j){
                 case 0:
                 case 7:
-                    tabuleiro[7][j].peca = new Torre(imagens.get("B_TORRE"), Color.WHITE, 7, j, this.lado, this.lado, this.lado);
-                    tabuleiro[0][j].peca = new Torre(imagens.get("P_TORRE"), Color.BLACK, 0, j, this.lado, this.lado, this.lado);
+                    tabuleiro[7][j].peca = new Torre(getImagem("B_TORRE"), Color.WHITE, 7, j, this.lado, this.lado, this.lado);
+                    tabuleiro[0][j].peca = new Torre(getImagem("P_TORRE"), Color.BLACK, 0, j, this.lado, this.lado, this.lado);
                     break;
                 case 1:
                 case 6:
-                    tabuleiro[7][j].peca = new Cavalo(imagens.get("B_CAVALO"), Color.WHITE, 7, j, this.lado, this.lado, this.lado);
-                    tabuleiro[0][j].peca = new Cavalo(imagens.get("P_CAVALO"), Color.BLACK, 0, j, this.lado, this.lado, this.lado);
+                    tabuleiro[7][j].peca = new Cavalo(getImagem("B_CAVALO"), Color.WHITE, 7, j, this.lado, this.lado, this.lado);
+                    tabuleiro[0][j].peca = new Cavalo(getImagem("P_CAVALO"), Color.BLACK, 0, j, this.lado, this.lado, this.lado);
                     break;
                 case 2:
                 case 5:
-                    tabuleiro[7][j].peca = new Bispo(imagens.get("B_BISPO"), Color.WHITE, 7, j, this.lado, this.lado, this.lado);
-                    tabuleiro[0][j].peca = new Bispo(imagens.get("P_BISPO"), Color.BLACK, 0, j, this.lado, this.lado, this.lado);
+                    tabuleiro[7][j].peca = new Bispo(getImagem("B_BISPO"), Color.WHITE, 7, j, this.lado, this.lado, this.lado);
+                    tabuleiro[0][j].peca = new Bispo(getImagem("P_BISPO"), Color.BLACK, 0, j, this.lado, this.lado, this.lado);
                     break;
                 case 3:
-                    tabuleiro[7][j].peca = new Rainha(imagens.get("B_RAINHA"), Color.WHITE, 7, j, this.lado, this.lado, this.lado);
-                    tabuleiro[0][j].peca = new Rainha(imagens.get("P_RAINHA"), Color.BLACK, 0, j, this.lado, this.lado, this.lado);
+                    tabuleiro[7][j].peca = new Rainha(getImagem("B_RAINHA"), Color.WHITE, 7, j, this.lado, this.lado, this.lado);
+                    tabuleiro[0][j].peca = new Rainha(getImagem("P_RAINHA"), Color.BLACK, 0, j, this.lado, this.lado, this.lado);
                     break;
                 case 4:
-                    tabuleiro[7][j].peca = new Rei(imagens.get("B_REI"), Color.WHITE, 7, j, this.lado, this.lado, this.lado);
-                    tabuleiro[0][j].peca = new Rei(imagens.get("P_REI"), Color.BLACK, 0, j, this.lado, this.lado, this.lado);
+                    tabuleiro[7][j].peca = new Rei(getImagem("B_REI"), Color.WHITE, 7, j, this.lado, this.lado, this.lado);
+                    tabuleiro[0][j].peca = new Rei(getImagem("P_REI"), Color.BLACK, 0, j, this.lado, this.lado, this.lado);
                     break;
                 default:
                     break;
@@ -251,66 +272,114 @@ class ControladorDeJogo{
             }
         }
         }
+
+        urlDaImagem = JogoXadrez.class.getResource("images/" + "erro.png");
+        if(urlDaImagem == null){
+            System.out.println("Erro: Não foi possível encontrar a imagem.");
+            this.painel.add(new JLabel("Erro ao carregar imagem!"));
+        }
+        else{
+                try {
+                    imagemErro = ImageIO.read(urlDaImagem);
+
+                } catch (IOException e) {
+                        throw new RuntimeException("ERRO CRÍTICO: Falha ao carregar imagem. Verifique se os arquivos estão corretos.", e);
+            }
+        }
     }
 
     public void gerenciarClique(int linha, int coluna){
         if(this.resultado == null){
-            if(casaSelecionada != null){
-                if(movimentosPossiveis.contains(tabuleiro[linha][coluna])){
+            if(this.promocao){
+                if(coluna == this.promocaoColuna && (promocaoLinha == 4 && linha > 3 || promocaoLinha == 0 && linha < 4)){
+                    int pecaEscolhida = Math.abs(promocaoLinha - linha);
+                    if(promocaoLinha == 4) this.promocaoLinha = 7;
 
-                    if(tabuleiro[linha][coluna].peca != null){
-                        if(vezDoJogador == Color.WHITE) pecasPretas.remove(tabuleiro[linha][coluna].peca);
-                        else pecasBrancas.remove(tabuleiro[linha][coluna].peca);
+                    switch (pecaEscolhida) {
+                        case 0:
+                            if(vezDoJogador == Color.BLACK) tabuleiro[this.promocaoLinha][this.promocaoColuna].peca = new Rainha(getImagem("B_RAINHA"), Color.WHITE, this.promocaoLinha, this.promocaoColuna, this.lado, this.lado, this.lado);
+                            else tabuleiro[this.promocaoLinha][this.promocaoColuna].peca = new Rainha(getImagem("P_RAINHA"), Color.BLACK, this.promocaoLinha, this.promocaoColuna, this.lado, this.lado, this.lado);
+                            break;
+                        case 1:
+                            if(vezDoJogador == Color.BLACK) tabuleiro[this.promocaoLinha][this.promocaoColuna].peca = new Cavalo(getImagem("B_CAVALO"), Color.WHITE, this.promocaoLinha, this.promocaoColuna, this.lado, this.lado, this.lado);
+                            else tabuleiro[this.promocaoLinha][this.promocaoColuna].peca = new Cavalo(getImagem("P_CAVALO"), Color.BLACK, this.promocaoLinha, this.promocaoColuna, this.lado, this.lado, this.lado);
+                            break;
+                        case 2:
+                            if(vezDoJogador == Color.BLACK) tabuleiro[this.promocaoLinha][this.promocaoColuna].peca = new Torre(getImagem("B_TORRE"), Color.WHITE, this.promocaoLinha, this.promocaoColuna, this.lado, this.lado, this.lado);
+                            else tabuleiro[this.promocaoLinha][this.promocaoColuna].peca = new Torre(getImagem("P_TORRE"), Color.BLACK, this.promocaoLinha, this.promocaoColuna, this.lado, this.lado, this.lado);
+                            break;
+                        case 3:
+                            if(vezDoJogador == Color.BLACK) tabuleiro[this.promocaoLinha][this.promocaoColuna].peca = new Bispo(getImagem("B_BISPO"), Color.WHITE, this.promocaoLinha, this.promocaoColuna, this.lado, this.lado, this.lado);
+                            else tabuleiro[this.promocaoLinha][this.promocaoColuna].peca = new Bispo(getImagem("P_BISPO"), Color.BLACK, this.promocaoLinha, this.promocaoColuna, this.lado, this.lado, this.lado);
+                        default:
+                            break;
                     }
-
-                    if(casaSelecionada.peca instanceof Rei && linha == casaSelecionada.getLinha() && Math.abs(coluna - casaSelecionada.getColuna()) == 2){
-                        if(coluna == 6){
-                            tabuleiro[linha][7].peca.moverPara(linha, 5);
-                            tabuleiro[linha][5].peca = tabuleiro[linha][7].peca;
-                            tabuleiro[linha][7].peca = null;
-                        }
-                        else{
-                            tabuleiro[linha][0].peca.moverPara(linha, 3);
-                            tabuleiro[linha][3].peca = tabuleiro[linha][0].peca;
-                            tabuleiro[linha][0].peca = null;
-                        }
-                    }
-
-                    if(casaSelecionada.peca instanceof Peao && coluna != casaSelecionada.getColuna() && tabuleiro[linha][coluna].peca == null){
-                        tabuleiro[acabouDeAndarDuas.linha][acabouDeAndarDuas.coluna].peca = null;
-                    }
-                    
-                    this.acabouDeAndarDuas = null;
-
-                    if(casaSelecionada.peca instanceof Peao && Math.abs(linha - casaSelecionada.getLinha()) == 2){
-                        this.acabouDeAndarDuas = (Peao)casaSelecionada.peca;
-                    }
-
-
-                    casaSelecionada.peca.moverPara(linha, coluna);
-                    tabuleiro[linha][coluna].peca = casaSelecionada.peca;
-                    casaSelecionada.peca = null;
-
-
-                    vezDoJogador = (vezDoJogador == Color.WHITE) ? Color.BLACK : Color.WHITE;
+                    this.promocao = false;
                 }
-                movimentosPossiveis.clear();
-                casaSelecionada = null;
-
-                monitoraXequeMate(vezDoJogador);
             }
+            else{
+                if(casaSelecionada != null){
+                    if(movimentosPossiveis.contains(tabuleiro[linha][coluna])){
+
+                        if(tabuleiro[linha][coluna].peca != null){
+                            if(vezDoJogador == Color.WHITE) pecasPretas.remove(tabuleiro[linha][coluna].peca);
+                            else pecasBrancas.remove(tabuleiro[linha][coluna].peca);
+                        }
+
+                        if(casaSelecionada.peca instanceof Rei && linha == casaSelecionada.getLinha() && Math.abs(coluna - casaSelecionada.getColuna()) == 2){
+                            if(coluna == 6){
+                                tabuleiro[linha][7].peca.moverPara(linha, 5);
+                                tabuleiro[linha][5].peca = tabuleiro[linha][7].peca;
+                                tabuleiro[linha][7].peca = null;
+                            }
+                            else{
+                                tabuleiro[linha][0].peca.moverPara(linha, 3);
+                                tabuleiro[linha][3].peca = tabuleiro[linha][0].peca;
+                                tabuleiro[linha][0].peca = null;
+                            }
+                        }
+
+                        if(casaSelecionada.peca instanceof Peao && coluna != casaSelecionada.getColuna() && tabuleiro[linha][coluna].peca == null){
+                            tabuleiro[acabouDeAndarDuas.linha][acabouDeAndarDuas.coluna].peca = null;
+                        }
+                        
+                        this.acabouDeAndarDuas = null;
+
+                        if(casaSelecionada.peca instanceof Peao && Math.abs(linha - casaSelecionada.getLinha()) == 2){
+                            this.acabouDeAndarDuas = (Peao)casaSelecionada.peca;
+                        }
+
+                        if(casaSelecionada.peca instanceof Peao && (linha == 7 || linha == 0)){
+                            this.promocao = true; 
+                            if(linha == 7) this.promocaoLinha = 4;
+                            else this.promocaoLinha = 0;
+                            this.promocaoColuna = coluna;
+                        }
+
+                        casaSelecionada.peca.moverPara(linha, coluna);
+                        tabuleiro[linha][coluna].peca = casaSelecionada.peca;
+                        casaSelecionada.peca = null;
+
+                        vezDoJogador = (vezDoJogador == Color.WHITE) ? Color.BLACK : Color.WHITE;
+                    }
+                    movimentosPossiveis.clear();
+                    casaSelecionada = null;
+
+                    monitoraXequeMate(vezDoJogador);
+                }
 
 
-            else if(tabuleiro[linha][coluna].peca != null && tabuleiro[linha][coluna].peca.cor == vezDoJogador){
-            movimentosPossiveis.clear();
-            casaSelecionada = tabuleiro[linha][coluna];
+                else if(tabuleiro[linha][coluna].peca != null && tabuleiro[linha][coluna].peca.cor == vezDoJogador){
+                movimentosPossiveis.clear();
+                casaSelecionada = tabuleiro[linha][coluna];
+                
+                movimentosPossiveis = geraMovimentosLegais(casaSelecionada.peca);
+
+                movimentosPossiveis = filtraMovimentos(casaSelecionada, movimentosPossiveis);
             
-            movimentosPossiveis = geraMovimentosLegais(casaSelecionada.peca);
-
-            movimentosPossiveis = filtraMovimentos(casaSelecionada, movimentosPossiveis);
-        
-        }
-        }
+            }
+            }
+    }
 
         this.painel.repaint();
     }
@@ -380,6 +449,23 @@ class ControladorDeJogo{
 
     public Color getResultado(){
         return this.resultado;
+    }
+
+    public boolean getPromocao(){
+        return this.promocao;
+    }
+
+    public int getPromocaoLinha(){
+        return this.promocaoLinha;
+    }
+
+    public int getPromocaoColuna(){
+        return this.promocaoColuna;
+    }
+
+    public Image getImagem(String peca){
+        if(imagens.containsKey(peca.toUpperCase())) return imagens.get(peca);
+        else return this.imagemErro;
     }
 
     public boolean estaEmXeque(Color jogador){
@@ -691,8 +777,3 @@ class Rainha extends Peca{
         return (torreVirtual.podeIr(linha, coluna, controlador) || bispoVirtual.podeIr(linha, coluna, controlador));
     }
 }
-
-/*
- *  OBJETIVOS:
- *      5.promocao de peça
- */
