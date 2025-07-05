@@ -1,4 +1,4 @@
-# Nome do projeto
+# Projeto Xadrez
 
 ![GitHub repo size](https://img.shields.io/github/repo-size/iuricode/README-template?style=for-the-badge)
 ![GitHub language count](https://img.shields.io/github/languages/count/iuricode/README-template?style=for-the-badge)
@@ -8,7 +8,7 @@
 
 <img src="imagem.png" alt="Exemplo imagem">
 
-> Linha adicional de texto informativo sobre o que o projeto faz. Sua introdução deve ter cerca de 2 ou 3 linhas. Não exagere, as pessoas não vão ler.
+> Este é um jogo de xadrez completo e funcional feito em Java com a biblioteca Swing, desenvolvido como um desafio prático para aplicar e aprofundar conceitos de Orientação a Objetos. O foco foi criar um motor de jogo preciso, que gerencia todas as regras clássicas e permite que dois jogadores disputem uma partida localmente.
 
 ### Ajustes e melhorias
 
